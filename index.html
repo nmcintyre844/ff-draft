@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasy Draft Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="field-lines" aria-hidden="true"></div>
+
+<main class="wrap">
+  <header class="hero">
+    <p class="eyebrow">League Draft Lottery</p>
+    <h1 class="title">Draft <span>Order</span></h1>
+    <p class="subtitle">Enter your league, hit the button, watch the picks fall.</p>
+  </header>
+
+  <section id="setup" class="panel">
+    <h2>Who's drafting?</h2>
+    <form id="add-form" class="add-form" autocomplete="off">
+      <input id="name-input" type="text" placeholder="Add a manager's name…" maxlength="30" />
+      <button type="submit" class="btn btn-secondary">Add</button>
+    </form>
+
+    <ul id="roster-list" class="roster-list"></ul>
+
+    <p class="hint" id="roster-hint"></p>
+
+    <div class="actions">
+      <button id="clear-btn" class="btn btn-ghost" type="button">Clear all</button>
+      <button id="draw-btn" class="btn btn-primary" type="button" disabled>
+        <span class="btn-label">Draw Draft Order</span>
+      </button>
+    </div>
+  </section>
+
+  <section id="board-section" class="panel hidden">
+    <div class="board-header">
+      <h2>Draft Board</h2>
+      <button id="redo-btn" class="btn btn-ghost" type="button">Start Over</button>
+    </div>
+    <ol id="board" class="board"></ol>
+  </section>
+</main>
+
+<div id="confetti-layer" aria-hidden="true"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
