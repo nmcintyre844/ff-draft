@@ -9,3 +9,6 @@ self-contained file with no dependencies or build step). Add each league
 manager's name, then hit **Run the Lottery**. Picks are revealed one at a
 time from the last pick up to #1, slot-machine style, with confetti for the
 first overall pick. Names are remembered locally between visits.
+
+Two draw modes are available as tabs: **"Random"** (the default, with a
+seeding pass) and **Actually Random** (a plain uniform shuffle).

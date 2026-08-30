@@ -145,6 +145,30 @@
   .hint { color: var(--muted); font-size: 0.9rem; margin-top: 12px; text-align: center; }
   .hidden { display: none; }
 
+  .tabs {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    padding: 6px;
+  }
+  .tabs button {
+    background: transparent;
+    border-radius: 8px;
+    color: var(--muted);
+    flex: 1;
+    font-weight: 600;
+    padding: 12px 10px;
+  }
+  .tabs button:hover { filter: none; color: var(--text); }
+  .tabs button.active {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--accent);
+  }
+
   .confetti {
     position: fixed;
     top: -12px;
@@ -164,6 +188,11 @@
     <h1>🏈 Draft Order <span>Lottery</span></h1>
     <p>Add every manager, then let the football gods decide.</p>
   </header>
+
+  <div class="tabs" role="tablist">
+    <button id="tabRandom" class="active" role="tab" aria-selected="true">&ldquo;Random&rdquo;</button>
+    <button id="tabActuallyRandom" role="tab" aria-selected="false">Actually Random</button>
+  </div>
 
   <div class="card" id="setupCard">
     <h2>League Managers</h2>
@@ -197,8 +226,27 @@
   const board = document.getElementById('board');
   const boardHint = document.getElementById('boardHint');
 
+  const tabRandom = document.getElementById('tabRandom');
+  const tabActuallyRandom = document.getElementById('tabActuallyRandom');
+
   let names = [];
   let running = false;
+  let mode = 'seeded';
+
+  function selectTab(nextMode) {
+    if (running || mode === nextMode) return;
+    mode = nextMode;
+    tabRandom.classList.toggle('active', mode === 'seeded');
+    tabRandom.setAttribute('aria-selected', mode === 'seeded');
+    tabActuallyRandom.classList.toggle('active', mode === 'fair');
+    tabActuallyRandom.setAttribute('aria-selected', mode === 'fair');
+    boardCard.classList.add('hidden');
+    board.innerHTML = '';
+    drawBtn.textContent = 'Run the Lottery';
+  }
+
+  tabRandom.addEventListener('click', () => selectTab('seeded'));
+  tabActuallyRandom.addEventListener('click', () => selectTab('fair'));
 
   try {
     const saved = JSON.parse(localStorage.getItem('ff-draft-names') || '[]');
@@ -279,7 +327,8 @@
   }
 
   function finalOrder() {
-    return applySeeding(shuffle(names));
+    const order = shuffle(names);
+    return mode === 'fair' ? order : applySeeding(order);
   }
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
