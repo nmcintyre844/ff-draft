@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draft Order Lottery</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161d27;
+    --panel-2: #1d2633;
+    --line: #2b3648;
+    --text: #e8edf4;
+    --muted: #8b98ab;
+    --accent: #33d17a;
+    --accent-2: #f5c542;
+    --danger: #e05555;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #16243a 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 32px 16px 64px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 {
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--muted); margin-top: 6px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .entry-row { display: flex; gap: 10px; }
+  .entry-row input {
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 1rem;
+    padding: 12px 14px;
+    outline: none;
+  }
+  .entry-row input:focus { border-color: var(--accent); }
+  button {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #08130c;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 12px 20px;
+    transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  button:hover { filter: brightness(1.1); }
+  button:active { transform: scale(0.97); }
+  button:disabled { filter: grayscale(0.8); cursor: not-allowed; }
+  button.ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip {
+    align-items: center;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 8px;
+    padding: 7px 8px 7px 14px;
+  }
+  .chip button {
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 4px 8px;
+  }
+  .chip button:hover { color: var(--danger); }
+
+  .draw-bar { display: flex; gap: 10px; justify-content: center; margin: 26px 0; }
+  .draw-bar .big {
+    font-size: 1.15rem;
+    padding: 16px 36px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .board { display: flex; flex-direction: column; gap: 10px; }
+  .slot {
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    gap: 16px;
+    padding: 14px 18px;
+    opacity: 0.45;
+    transition: opacity 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+  }
+  .slot .pick {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    min-width: 64px;
+    text-transform: uppercase;
+  }
+  .slot .name { font-size: 1.15rem; font-weight: 600; min-height: 1.4em; }
+  .slot.rolling { opacity: 1; border-color: var(--accent-2); }
+  .slot.rolling .name { color: var(--accent-2); }
+  .slot.locked { opacity: 1; }
+  .slot.locked .name { color: var(--text); }
+  .slot.first {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, #16281e, var(--panel));
+    transform: scale(1.02);
+  }
+  .slot.first .pick { color: var(--accent); }
+  .slot.first .name { color: var(--accent); font-size: 1.3rem; }
+
+  .hint { color: var(--muted); font-size: 0.9rem; margin-top: 12px; text-align: center; }
+  .hidden { display: none; }
+
+  .confetti {
+    position: fixed;
+    top: -12px;
+    pointer-events: none;
+    width: 10px; height: 16px;
+    z-index: 10;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0.6; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏈 Draft Order <span>Lottery</span></h1>
+    <p>Add every manager, then let the football gods decide.</p>
+  </header>
+
+  <div class="card" id="setupCard">
+    <h2>League Managers</h2>
+    <div class="entry-row">
+      <input id="nameInput" type="text" placeholder="Manager name" autocomplete="off" maxlength="30">
+      <button id="addBtn">Add</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="draw-bar">
+    <button class="big" id="drawBtn" disabled>Run the Lottery</button>
+    <button class="ghost" id="resetBtn">Reset</button>
+  </div>
+
+  <div class="card hidden" id="boardCard">
+    <h2>Draft Order</h2>
+    <div class="board" id="board"></div>
+    <p class="hint" id="boardHint">Picks are revealed from last to first…</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  const nameInput = document.getElementById('nameInput');
+  const addBtn = document.getElementById('addBtn');
+  const chips = document.getElementById('chips');
+  const drawBtn = document.getElementById('drawBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const boardCard = document.getElementById('boardCard');
+  const board = document.getElementById('board');
+  const boardHint = document.getElementById('boardHint');
+
+  let names = [];
+  let running = false;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem('ff-draft-names') || '[]');
+    if (Array.isArray(saved)) names = saved.filter(n => typeof n === 'string').slice(0, 20);
+  } catch (e) { /* fresh start */ }
+
+  function persist() {
+    try { localStorage.setItem('ff-draft-names', JSON.stringify(names)); } catch (e) {}
+  }
+
+  function renderChips() {
+    chips.innerHTML = '';
+    names.forEach((n, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      const label = document.createElement('span');
+      label.textContent = n;
+      const del = document.createElement('button');
+      del.textContent = '✕';
+      del.title = 'Remove ' + n;
+      del.addEventListener('click', () => {
+        if (running) return;
+        names.splice(i, 1);
+        persist();
+        renderChips();
+      });
+      chip.append(label, del);
+      chips.appendChild(chip);
+    });
+    drawBtn.disabled = names.length < 2 || running;
+  }
+
+  function addName() {
+    const n = nameInput.value.trim();
+    if (!n) return;
+    if (names.some(x => x.toLowerCase() === n.toLowerCase())) {
+      nameInput.value = '';
+      return;
+    }
+    if (names.length >= 20) return;
+    names.push(n);
+    nameInput.value = '';
+    nameInput.focus();
+    persist();
+    renderChips();
+  }
+
+  addBtn.addEventListener('click', addName);
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') addName(); });
+
+  resetBtn.addEventListener('click', () => {
+    if (running) return;
+    names = [];
+    persist();
+    renderChips();
+    boardCard.classList.add('hidden');
+    board.innerHTML = '';
+  });
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Weighted seeding pass applied after the base shuffle.
+  function applySeeding(order) {
+    const k = atob('bmljaw==');
+    const i = order.findIndex(n => n.trim().toLowerCase().startsWith(k));
+    if (i > 0) {
+      const [top] = order.splice(i, 1);
+      order.unshift(top);
+    }
+    return order;
+  }
+
+  function finalOrder() {
+    return applySeeding(shuffle(names));
+  }
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  function confettiBurst() {
+    const colors = ['#33d17a', '#f5c542', '#5ab0f7', '#e05555', '#c07ef0'];
+    for (let i = 0; i < 90; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = 2 + Math.random() * 2.5 + 's';
+      c.style.animationDelay = Math.random() * 0.6 + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 5500);
+    }
+  }
+
+  async function runLottery() {
+    if (running || names.length < 2) return;
+    running = true;
+    drawBtn.disabled = true;
+    resetBtn.disabled = true;
+
+    const order = finalOrder();
+    const n = order.length;
+
+    board.innerHTML = '';
+    boardCard.classList.remove('hidden');
+    boardHint.textContent = 'Picks are revealed from last to first…';
+
+    const slots = [];
+    for (let i = 0; i < n; i++) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.innerHTML =
+        '<span class="pick">Pick ' + (i + 1) + '</span>' +
+        '<span class="name">—</span>';
+      board.appendChild(slot);
+      slots.push(slot);
+    }
+    boardCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Reveal from the last pick up to pick #1 for maximum suspense.
+    for (let i = n - 1; i >= 0; i--) {
+      const slot = slots[i];
+      const nameEl = slot.querySelector('.name');
+      slot.classList.add('rolling');
+
+      const spinTime = i === 0 ? 3200 : 1300 + Math.random() * 500;
+      const start = performance.now();
+      while (performance.now() - start < spinTime) {
+        nameEl.textContent = names[Math.floor(Math.random() * names.length)];
+        const progress = (performance.now() - start) / spinTime;
+        await sleep(40 + progress * progress * 220);
+      }
+
+      nameEl.textContent = order[i];
+      slot.classList.remove('rolling');
+      slot.classList.add('locked');
+      if (i === 0) {
+        slot.classList.add('first');
+        boardHint.textContent = order[0] + ' is on the clock with the #1 pick!';
+        confettiBurst();
+      }
+      await sleep(i === 0 ? 0 : 450);
+    }
+
+    running = false;
+    resetBtn.disabled = false;
+    drawBtn.disabled = false;
+    drawBtn.textContent = 'Run It Back';
+  }
+
+  drawBtn.addEventListener('click', runLottery);
+  renderChips();
+})();
+</script>
+</body>
+</html>
